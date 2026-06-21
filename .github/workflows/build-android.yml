@@ -62,14 +62,26 @@ jobs:
       - name: Install RN bundler CLI
         run: npm install --no-save @react-native-community/cli
 
-      - name: Enable JS bundling in debug build
+      - name: Enable JS bundling flag (creates the Gradle task so it can be skipped)
         run: echo "BUNDLE_IN_DEBUG=true" >> android/gradle.properties
+
+      - name: Bundle JS manually
+        run: |
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file node_modules/expo/AppEntry.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res \
+            --reset-cache
+          echo "Bundle OK: $(du -sh android/app/src/main/assets/index.android.bundle)"
 
       - name: Build Android Debug APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon -x :app:bundleDebugJsAndAssets
         env:
           JAVA_OPTS: "-Xmx4096m"
 
