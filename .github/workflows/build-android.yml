@@ -34,11 +34,22 @@ jobs:
 
       - name: Generate placeholder assets
         run: |
-          mkdir -p assets
-          convert -size 1024x1024 xc:"#1B4F8A" assets/icon.png
-          convert -size 1024x1024 xc:"#1B4F8A" assets/adaptive-icon.png
-          convert -size 1242x2688 xc:"#1B4F8A" assets/splash.png
-          convert -size 32x32 xc:"#1B4F8A" assets/favicon.png
+          python3 - <<'EOF'
+          import struct, zlib, os
+          def chunk(t, d):
+              c = t + d
+              return struct.pack('>I', len(d)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
+          def png(w, h, r=27, g=79, b=138):
+              row = b'\x00' + bytes([r, g, b]) * w
+              return (b'\x89PNG\r\n\x1a\n'
+                      + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0))
+                      + chunk(b'IDAT', zlib.compress(row * h, 1))
+                      + chunk(b'IEND', b''))
+          os.makedirs('assets', exist_ok=True)
+          for name, w, h in [('icon',1024,1024),('adaptive-icon',1024,1024),('splash',1242,2688),('favicon',32,32)]:
+              open(f'assets/{name}.png','wb').write(png(w,h))
+              print(f'Created assets/{name}.png')
+          EOF
 
       - name: Install dependencies
         run: npm ci
