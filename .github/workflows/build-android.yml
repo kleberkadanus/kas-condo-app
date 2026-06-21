@@ -62,23 +62,14 @@ jobs:
       - name: Install RN bundler CLI
         run: npm install --no-save @react-native-community/cli
 
-      - name: Bundle JS manually (standalone APK)
-        run: |
-          mkdir -p android/app/src/main/assets
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file node_modules/expo/AppEntry.js \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res \
-            --reset-cache 2>&1
-          echo "Bundle size: $(du -sh android/app/src/main/assets/index.android.bundle)"
+      - name: Enable JS bundling in debug build
+        run: echo "BUNDLE_IN_DEBUG=true" >> android/gradle.properties
 
       - name: Build Android Debug APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon -x bundleDebugJsAndAssets
+          ./gradlew assembleDebug --no-daemon
         env:
           JAVA_OPTS: "-Xmx4096m"
 
