@@ -59,51 +59,31 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
 
-      - name: Install RN bundler CLI
-        run: npm install --no-save @react-native-community/cli
-
-      - name: Configure gradle.properties
+      - name: Test autolinking before any changes
         run: |
-          echo "BUNDLE_IN_DEBUG=true" >> android/gradle.properties
+          node node_modules/expo-modules-autolinking/build/index.js resolve-modules-list --platform android --search-paths . 2>&1 | head -30 || true
 
-      - name: Bundle JS manually
+      - name: Bundle JS via expo export:embed
         run: |
-          mkdir -p android/app/src/main/assets
-          npx react-native bundle \
+          mkdir -p android/app/src/main/assets android/app/src/main/res
+          npx expo export:embed \
             --platform android \
             --dev false \
-            --entry-file node_modules/expo/AppEntry.js \
             --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res \
-            --reset-cache
-          echo "Bundle OK: $(du -sh android/app/src/main/assets/index.android.bundle)"
+            --assets-dest android/app/src/main/res 2>&1
+          echo "Bundle size: $(du -sh android/app/src/main/assets/index.android.bundle 2>/dev/null || echo 'not found')"
 
-      - name: List app Gradle tasks (debug)
+      - name: Test autolinking after expo export:embed
         run: |
-          cd android
-          chmod +x ./gradlew
-          ./gradlew :app:tasks --all 2>&1 | grep -iE "bundle|codegen|generate|js|node|schema" | head -40 || true
+          node node_modules/expo-modules-autolinking/build/index.js resolve-modules-list --platform android --search-paths . 2>&1 | head -20 || true
 
       - name: Build Android Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle-build.log; exit ${PIPESTATUS[0]}
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon 2>&1
         env:
           JAVA_OPTS: "-Xmx4096m"
-        continue-on-error: true
-
-      - name: Show build failure details
-        if: always()
-        run: |
-          echo "=== FAILURE SECTION ==="
-          grep -A 20 "What went wrong" /tmp/gradle-build.log || true
-          echo "=== TASKS SECTION ==="
-          grep -E "^> Task|FAILED|SKIPPED|UP-TO-DATE" /tmp/gradle-build.log | tail -30 || true
-          echo "=== NODE ERROR ==="
-          grep -B 5 -A 10 "non-zero exit value\|node.*error\|SyntaxError" /tmp/gradle-build.log || true
-
-      - name: Fail if build failed
-        run: test -f android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
