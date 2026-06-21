@@ -44,7 +44,7 @@
       "expo-image-picker"
     ],
     "extra": {
-      "apiUrl": "https://api.kas.app"
+      "apiUrl": "http://104.234.200.93:8090"
     }
   }
 }
