@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "KAS Condomínio",
+    "slug": "kas-condo-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1B4F8A"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1B4F8A"
+      },
+      "package": "app.kas.condo",
+      "versionCode": 1,
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "USE_FULL_SCREEN_INTENT",
+        "FOREGROUND_SERVICE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "app.kas.condo",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Necessário para chamadas da portaria",
+        "NSCameraUsageDescription": "Necessário para visualizar câmeras do condomínio"
+      }
+    },
+    "plugins": [
+      "expo-notifications",
+      "expo-secure-store",
+      "expo-document-picker",
+      "expo-image-picker"
+    ],
+    "extra": {
+      "apiUrl": "https://api.kas.app"
+    }
+  }
+}
