@@ -62,8 +62,9 @@ jobs:
       - name: Install RN bundler CLI
         run: npm install --no-save @react-native-community/cli
 
-      - name: Enable JS bundling flag (creates the Gradle task so it can be skipped)
-        run: echo "BUNDLE_IN_DEBUG=true" >> android/gradle.properties
+      - name: Configure gradle.properties
+        run: |
+          echo "BUNDLE_IN_DEBUG=true" >> android/gradle.properties
 
       - name: Bundle JS manually
         run: |
@@ -77,13 +78,32 @@ jobs:
             --reset-cache
           echo "Bundle OK: $(du -sh android/app/src/main/assets/index.android.bundle)"
 
-      - name: Build Android Debug APK
+      - name: List app Gradle tasks (debug)
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon -x :app:bundleDebugJsAndAssets
+          ./gradlew :app:tasks --all 2>&1 | grep -iE "bundle|codegen|generate|js|node|schema" | head -40 || true
+
+      - name: Build Android Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle-build.log; exit ${PIPESTATUS[0]}
         env:
           JAVA_OPTS: "-Xmx4096m"
+        continue-on-error: true
+
+      - name: Show build failure details
+        if: always()
+        run: |
+          echo "=== FAILURE SECTION ==="
+          grep -A 20 "What went wrong" /tmp/gradle-build.log || true
+          echo "=== TASKS SECTION ==="
+          grep -E "^> Task|FAILED|SKIPPED|UP-TO-DATE" /tmp/gradle-build.log | tail -30 || true
+          echo "=== NODE ERROR ==="
+          grep -B 5 -A 10 "non-zero exit value\|node.*error\|SyntaxError" /tmp/gradle-build.log || true
+
+      - name: Fail if build failed
+        run: test -f android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
