@@ -2,10 +2,10 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     tags: ['v*']
   pull_request:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -32,6 +32,14 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Generate placeholder assets
+        run: |
+          mkdir -p assets
+          convert -size 1024x1024 xc:"#1B4F8A" assets/icon.png
+          convert -size 1024x1024 xc:"#1B4F8A" assets/adaptive-icon.png
+          convert -size 1242x2688 xc:"#1B4F8A" assets/splash.png
+          convert -size 32x32 xc:"#1B4F8A" assets/favicon.png
+
       - name: Install dependencies
         run: npm ci
 
@@ -39,8 +47,7 @@ jobs:
         run: npm install react-native-sip2 --save 2>/dev/null || echo "SIP module optional"
 
       - name: Expo prebuild
-        run: |
-          npx expo prebuild --platform android --clean
+        run: npx expo prebuild --platform android --clean
         env:
           EXPO_NO_TELEMETRY: 1
 
@@ -64,16 +71,13 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: android/app/build/outputs/apk/debug/app-debug.apk
-          name: KAS Condomínio ${{ github.ref_name }}
+          name: KAS Condominio ${{ github.ref_name }}
           body: |
-            ## KAS Condomínio App ${{ github.ref_name }}
+            ## KAS Condominio App ${{ github.ref_name }}
 
-            ### Instalação
+            ### Instalacao
             1. Baixe o arquivo `app-debug.apk`
-            2. No celular: Configurações → Segurança → Instalar apps desconhecidos → Permitir
+            2. No celular: Configuracoes -> Seguranca -> Instalar apps desconhecidos -> Permitir
             3. Abra o APK e instale
-
-            ### O que há de novo
-            - Veja os commits nesta versão para detalhes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
