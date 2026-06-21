@@ -59,21 +59,23 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
 
-      - name: Embed JS bundle in debug build
-        run: echo "BUNDLE_IN_DEBUG=true" >> android/gradle.properties
-
-      - name: Generate keystore for signing
+      - name: Bundle JS manually (standalone APK)
         run: |
-          keytool -genkey -v -keystore android/app/debug.keystore \
-            -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=KAS Condo, OU=KAS, O=SuportTech, L=BR, S=BR, C=BR" 2>/dev/null || true
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file node_modules/expo/AppEntry.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res \
+            --reset-cache 2>&1
+          echo "Bundle size: $(du -sh android/app/src/main/assets/index.android.bundle)"
 
       - name: Build Android Debug APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon -x bundleDebugJsAndAssets
         env:
           JAVA_OPTS: "-Xmx4096m"
 
