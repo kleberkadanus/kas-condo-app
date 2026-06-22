@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { AvisosScreen } from '../screens/morador/AvisosScreen';
 import { CamerasScreen } from '../screens/morador/CamerasScreen';
 import { DialerScreen } from '../screens/shared/DialerScreen';
+import { ChatScreen } from '../screens/shared/ChatScreen';
 import { colors } from '../utils/colors';
 import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '../store/auth';
@@ -19,7 +20,7 @@ function ZeladorDashboard() {
 }
 
 const Tab = createBottomTabNavigator();
-const ICONS: Record<string, string> = { Início: '🏠', Avisos: '📋', Câmeras: '📹', Telefone: '📞' };
+const ICONS: Record<string, string> = { Início: '🏠', Avisos: '📋', Câmeras: '📹', Chat: '💬', Telefone: '📞' };
 
 export function ZeladorNavigator() {
   return (
@@ -35,6 +36,7 @@ export function ZeladorNavigator() {
       <Tab.Screen name="Início" component={ZeladorDashboard} />
       <Tab.Screen name="Avisos" component={AvisosScreen} />
       <Tab.Screen name="Câmeras" component={CamerasScreen} />
+      <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat com Síndico' }} />
       <Tab.Screen name="Telefone" component={DialerScreen} />
     </Tab.Navigator>
   );

@@ -11,6 +11,7 @@ import { BoletosSindicoScreen } from '../screens/sindico/BoletosSindicoScreen';
 import { ReservasSindicoScreen } from '../screens/sindico/ReservasSindicoScreen';
 import { ApartamentosScreen } from '../screens/sindico/ApartamentosScreen';
 import { DialerScreen } from '../screens/shared/DialerScreen';
+import { ChatScreen } from '../screens/shared/ChatScreen';
 import { colors } from '../utils/colors';
 
 const Tab = createBottomTabNavigator();
@@ -21,6 +22,7 @@ const ICONS: Record<string, string> = {
   Avisos: '📋',
   Moradores: '👥',
   Câmeras: '📹',
+  Chat: '💬',
   Telefone: '📞',
 };
 
@@ -40,6 +42,7 @@ function SindicoTabs() {
       <Tab.Screen name="Avisos" component={AvisosScreen} />
       <Tab.Screen name="Moradores" component={MoradoresScreen} />
       <Tab.Screen name="Câmeras" component={CamerasScreen} />
+      <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat com Moradores' }} />
       <Tab.Screen name="Telefone" component={DialerScreen} />
     </Tab.Navigator>
   );
