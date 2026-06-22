@@ -68,10 +68,12 @@ export async function listCameras(condoId: number): Promise<Camera[]> {
 export async function createUser(condoId: number, data: {
   name: string;
   email: string;
-  password: string;
-  role: string;
+  password?: string;
+  role?: string;
   apt_number?: string;
-  sip_extension?: string;
+  sip_user?: string;
+  sip_password?: string;
+  phone?: string;
 }): Promise<Resident> {
   const res = await apiClient.post(`/admin/condos/${condoId}/users`, data);
   return res.data;

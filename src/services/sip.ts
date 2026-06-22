@@ -82,6 +82,24 @@ class SIPService {
     useSIPStore.getState().setActiveCall(null);
   }
 
+  async makeCall(target: string): Promise<void> {
+    if (!SipModule || !this.initialized) {
+      console.warn('[SIP] Não registrado — não é possível ligar');
+      return;
+    }
+    try {
+      const callId = await SipModule.makeCall(target);
+      useSIPStore.getState().setActiveCall({
+        callId,
+        callerName: target,
+        callerNumber: target,
+        state: 'active',
+      });
+    } catch (e) {
+      console.error('[SIP] Erro ao ligar:', e);
+    }
+  }
+
   async unregister(): Promise<void> {
     if (!SipModule || !this.initialized) return;
     await SipModule.stop();

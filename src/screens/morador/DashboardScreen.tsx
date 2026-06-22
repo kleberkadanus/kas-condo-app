@@ -88,7 +88,7 @@ export function MoradorDashboard({ navigation }: any) {
           label="Câmeras"
           value="Ao vivo"
           color={colors.secondary}
-          onPress={() => navigation.navigate('Cameras')}
+          onPress={() => navigation.navigate('Câmeras')}
         />
       </View>
 

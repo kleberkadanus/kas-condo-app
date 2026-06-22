@@ -121,6 +121,8 @@ export interface Resident {
   condo_id: number;
   active: boolean;
   sip_extension?: string;
+  role?: 'morador' | 'sindico' | 'zelador';
+  sip_password?: string;
 }
 
 export interface SIPCall {

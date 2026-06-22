@@ -6,6 +6,11 @@ import { SindicoDashboard } from '../screens/sindico/DashboardScreen';
 import { MoradoresScreen } from '../screens/sindico/MoradoresScreen';
 import { AvisosScreen } from '../screens/morador/AvisosScreen';
 import { CamerasScreen } from '../screens/morador/CamerasScreen';
+import { NovoAvisoScreen } from '../screens/sindico/NovoAvisoScreen';
+import { BoletosSindicoScreen } from '../screens/sindico/BoletosSindicoScreen';
+import { ReservasSindicoScreen } from '../screens/sindico/ReservasSindicoScreen';
+import { ApartamentosScreen } from '../screens/sindico/ApartamentosScreen';
+import { DialerScreen } from '../screens/shared/DialerScreen';
 import { colors } from '../utils/colors';
 
 const Tab = createBottomTabNavigator();
@@ -16,6 +21,7 @@ const ICONS: Record<string, string> = {
   Avisos: '📋',
   Moradores: '👥',
   Câmeras: '📹',
+  Telefone: '📞',
 };
 
 function SindicoTabs() {
@@ -34,14 +40,25 @@ function SindicoTabs() {
       <Tab.Screen name="Avisos" component={AvisosScreen} />
       <Tab.Screen name="Moradores" component={MoradoresScreen} />
       <Tab.Screen name="Câmeras" component={CamerasScreen} />
+      <Tab.Screen name="Telefone" component={DialerScreen} />
     </Tab.Navigator>
   );
 }
 
 export function SindicoNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.sindico },
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: 'bold' },
+      }}
+    >
       <Stack.Screen name="SindicoMain" component={SindicoTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="NovoAviso" component={NovoAvisoScreen} options={{ title: 'Publicar Aviso' }} />
+      <Stack.Screen name="BoletosSindico" component={BoletosSindicoScreen} options={{ title: 'Boletos' }} />
+      <Stack.Screen name="ReservasSindico" component={ReservasSindicoScreen} options={{ title: 'Reservas' }} />
+      <Stack.Screen name="Apartamentos" component={ApartamentosScreen} options={{ title: 'Apartamentos e Vagas' }} />
     </Stack.Navigator>
   );
 }

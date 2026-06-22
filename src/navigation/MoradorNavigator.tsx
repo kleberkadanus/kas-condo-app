@@ -6,6 +6,7 @@ import { AvisosScreen } from '../screens/morador/AvisosScreen';
 import { ReservasScreen } from '../screens/morador/ReservasScreen';
 import { BoletosScreen } from '../screens/morador/BoletosScreen';
 import { CamerasScreen } from '../screens/morador/CamerasScreen';
+import { DialerScreen } from '../screens/shared/DialerScreen';
 import { colors } from '../utils/colors';
 
 const Tab = createBottomTabNavigator();
@@ -16,6 +17,7 @@ const ICONS: Record<string, string> = {
   Reservas: '📅',
   Boletos: '💰',
   Câmeras: '📹',
+  Telefone: '📞',
 };
 
 export function MoradorNavigator() {
@@ -36,6 +38,7 @@ export function MoradorNavigator() {
       <Tab.Screen name="Reservas" component={ReservasScreen} />
       <Tab.Screen name="Boletos" component={BoletosScreen} />
       <Tab.Screen name="Câmeras" component={CamerasScreen} />
+      <Tab.Screen name="Telefone" component={DialerScreen} />
     </Tab.Navigator>
   );
 }

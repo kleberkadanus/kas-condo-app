@@ -38,18 +38,19 @@ export function SindicoDashboard({ navigation }: any) {
 
       <View style={styles.statsGrid}>
         <StatCard label="Moradores" value={String(moradores?.length ?? 0)} icon="👥" color={colors.primary} onPress={() => navigation.navigate('Moradores')} />
-        <StatCard label="Inadimplentes" value={String(inadimplentes)} icon="⚠️" color={inadimplentes > 0 ? colors.warning : colors.success} onPress={() => navigation.navigate('Boletos')} />
-        <StatCard label="A receber" value={formatCurrency(totalReceber)} icon="💰" color={colors.error} onPress={() => navigation.navigate('Boletos')} />
-        <StatCard label="Reservas pendentes" value={String(pendentesReservas)} icon="📅" color={colors.info} onPress={() => navigation.navigate('Reservas')} />
+        <StatCard label="Inadimplentes" value={String(inadimplentes)} icon="⚠️" color={inadimplentes > 0 ? colors.warning : colors.success} onPress={() => navigation.navigate('BoletosSindico')} />
+        <StatCard label="A receber" value={formatCurrency(totalReceber)} icon="💰" color={colors.error} onPress={() => navigation.navigate('BoletosSindico')} />
+        <StatCard label="Reservas pendentes" value={String(pendentesReservas)} icon="📅" color={colors.info} onPress={() => navigation.navigate('ReservasSindico')} />
       </View>
 
       <View style={styles.actions}>
         <Text style={styles.sectionTitle}>Ações rápidas</Text>
         <ActionButton label="📋 Publicar aviso" onPress={() => navigation.navigate('NovoAviso')} />
-        <ActionButton label="💰 Enviar boleto" onPress={() => navigation.navigate('UploadBoleto')} />
+        <ActionButton label="💰 Boletos" onPress={() => navigation.navigate('BoletosSindico')} />
+        <ActionButton label="📅 Reservas" onPress={() => navigation.navigate('ReservasSindico')} />
         <ActionButton label="👥 Gerenciar moradores" onPress={() => navigation.navigate('Moradores')} />
         <ActionButton label="🏠 Apartamentos e vagas" onPress={() => navigation.navigate('Apartamentos')} />
-        <ActionButton label="📹 Câmeras" onPress={() => navigation.navigate('Cameras')} />
+        <ActionButton label="📹 Câmeras" onPress={() => navigation.navigate('Câmeras')} />
       </View>
     </ScrollView>
   );

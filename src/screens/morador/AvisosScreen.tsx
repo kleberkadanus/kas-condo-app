@@ -15,7 +15,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   financeiro: colors.error,
 };
 
-export function AvisosScreen() {
+export function AvisosScreen({ navigation }: any) {
   const { user } = useAuthStore();
   const condoId = user?.condo_id!;
   const [selected, setSelected] = useState<Announcement | null>(null);
@@ -31,6 +31,8 @@ export function AvisosScreen() {
   const pinned = data?.filter((a) => a.pinned) ?? [];
   const others = data?.filter((a) => !a.pinned) ?? [];
   const sorted = [...pinned, ...others];
+
+  const isSindico = user?.role === 'sindico' || user?.role === 'superadmin';
 
   return (
     <View style={styles.container}>
@@ -55,6 +57,15 @@ export function AvisosScreen() {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Nenhum aviso disponível.</Text>}
       />
+
+      {isSindico && navigation && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate('NovoAviso')}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      )}
 
       <Modal visible={!!selected} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -123,4 +134,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.sindico,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    zIndex: 100,
+  },
+  fabText: { color: '#fff', fontSize: 28, fontWeight: '300', lineHeight: 30 },
 });
