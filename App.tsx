@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 import { useAuthStore } from './src/store/auth';
 import { sipService } from './src/services/sip';
 import { registerForPushNotifications, setupNotificationListeners } from './src/services/notifications';
+import { checkForUpdate } from './src/services/updater';
 import { RootNavigator } from './src/navigation';
 
 const queryClient = new QueryClient({
@@ -16,6 +17,9 @@ function AppContent() {
 
   useEffect(() => {
     loadFromStorage();
+    // Verifica atualização 3s após iniciar para não atrasar o boot
+    const t = setTimeout(() => checkForUpdate(), 3000);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
