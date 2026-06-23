@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../../store/auth';
 import { listMessages, sendMessage, markRead, Message } from '../../api/chat';
-import { colors } from '../../theme/colors';
+import { colors } from '../../utils/colors';
 
 export function ChatScreen() {
   const { user } = useAuthStore();
