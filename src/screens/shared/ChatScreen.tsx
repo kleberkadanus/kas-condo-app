@@ -26,7 +26,11 @@ export function ChatScreen() {
     finally { setLoading(false); }
   }, [condoId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   const handleSend = async () => {
     const content = text.trim();

@@ -48,12 +48,19 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   try {
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: '00000000-0000-0000-0000-000000000000',
+    }).catch(() => null);
+    if (!tokenData) {
+      // Fallback: FCM token nativo
+      const fcm = await Notifications.getDevicePushTokenAsync().catch(() => null);
+      if (!fcm) return null;
+      await apiClient.post('/notifications/register', { token: fcm.data, platform: Platform.OS });
+      return fcm.data;
+    }
+    const token = tokenData.data;
     console.log('[Push] Token:', token);
-    await apiClient.post('/notifications/register', {
-      token,
-      platform: Platform.OS,
-    });
+    await apiClient.post('/notifications/register', { token, platform: Platform.OS });
     return token;
   } catch (e) {
     console.error('[Push] Erro ao registrar token:', e);

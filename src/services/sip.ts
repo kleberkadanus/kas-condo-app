@@ -30,7 +30,7 @@ class SIPService {
         password: user.sip_password,
         displayName: user.name,
         transport: 'UDP',
-        port: '5060',
+        port: '7040',
       });
 
       SipModule.addListener('registration', (event: any) => {
