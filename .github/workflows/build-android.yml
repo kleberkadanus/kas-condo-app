@@ -57,6 +57,65 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Patch react-native-sip2 for Android 12+
+        run: |
+          python3 - <<'PYEOF'
+          import glob, os, re
+
+          files = glob.glob('node_modules/react-native-sip2/**/*.java', recursive=True)
+          print(f'Found {len(files)} Java files in react-native-sip2')
+
+          for path in files:
+              content = open(path).read()
+              if 'registerReceiver' not in content:
+                  continue
+
+              print(f'\n=== {path} ===')
+              for i, line in enumerate(content.split('\n'), 1):
+                  if 'registerReceiver' in line:
+                      print(f'  line {i}: {line.strip()}')
+
+              # Replace: .registerReceiver(a, b) -> API-aware version (no flag yet = 2 args)
+              # Match any 2-arg registerReceiver call not already having 3 args with flag
+              def fix_receiver(m):
+                  full = m.group(0)
+                  if 'RECEIVER_NOT_EXPORTED' in full or 'RECEIVER_EXPORTED' in full:
+                      return full  # already patched
+                  obj = m.group(1)   # context or this
+                  a   = m.group(2)   # receiver arg
+                  b   = m.group(3)   # filter arg
+                  return (
+                      f'(android.os.Build.VERSION.SDK_INT >= 26 ? '
+                      f'{obj}.registerReceiver({a}, {b}, android.content.Context.RECEIVER_NOT_EXPORTED) : '
+                      f'{obj}.registerReceiver({a}, {b}))'
+                  )
+
+              # Pattern: captures obj.registerReceiver(arg1, arg2)
+              patched = re.sub(
+                  r'([\w.()]+)\.registerReceiver\((\w+),\s*(\w+)\)',
+                  fix_receiver,
+                  content
+              )
+
+              if patched != content:
+                  open(path, 'w').write(patched)
+                  print(f'  -> PATCHED')
+              else:
+                  print(f'  -> no simple pattern matched, trying broader fix')
+                  # Fallback: just add the flag as 3rd arg to any 2-arg registerReceiver
+                  patched2 = re.sub(
+                      r'registerReceiver\(([^,)]+),\s*([^,)]+)\)(?!\s*,)',
+                      lambda m: (
+                          f'registerReceiver({m.group(1)}, {m.group(2)}, android.content.Context.RECEIVER_NOT_EXPORTED)'
+                          if 'RECEIVER_NOT_EXPORTED' not in m.group(0) else m.group(0)
+                      ),
+                      content
+                  )
+                  if patched2 != content:
+                      open(path, 'w').write(patched2)
+                      print(f'  -> PATCHED (fallback)')
+          PYEOF
+
       - name: Expo prebuild
         run: npx expo prebuild --platform android --clean
         env:
