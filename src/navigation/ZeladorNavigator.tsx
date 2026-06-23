@@ -1,12 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity, Alert, View, StyleSheet } from 'react-native';
 import { AvisosScreen } from '../screens/morador/AvisosScreen';
 import { CamerasScreen } from '../screens/morador/CamerasScreen';
 import { DialerScreen } from '../screens/shared/DialerScreen';
 import { ChatScreen } from '../screens/shared/ChatScreen';
 import { colors } from '../utils/colors';
-import { View, StyleSheet } from 'react-native';
 import { useAuthStore } from '../store/auth';
 
 function ZeladorDashboard() {
@@ -23,6 +22,15 @@ const Tab = createBottomTabNavigator();
 const ICONS: Record<string, string> = { Início: '🏠', Avisos: '📋', Câmeras: '📹', Chat: '💬', Telefone: '📞' };
 
 export function ZeladorNavigator() {
+  const { logout } = useAuthStore();
+
+  function confirmLogout() {
+    Alert.alert('Sair', 'Deseja sair da sua conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: logout },
+    ]);
+  }
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -31,6 +39,11 @@ export function ZeladorNavigator() {
         tabBarInactiveTintColor: colors.textLight,
         headerStyle: { backgroundColor: colors.zelador },
         headerTintColor: '#fff',
+        headerRight: () => (
+          <TouchableOpacity onPress={confirmLogout} style={{ marginRight: 16 }}>
+            <Text style={{ color: '#fff', fontSize: 13 }}>Sair</Text>
+          </TouchableOpacity>
+        ),
       })}
     >
       <Tab.Screen name="Início" component={ZeladorDashboard} />

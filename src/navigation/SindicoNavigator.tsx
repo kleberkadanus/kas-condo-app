@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity, Alert } from 'react-native';
 import { SindicoDashboard } from '../screens/sindico/DashboardScreen';
 import { MoradoresScreen } from '../screens/sindico/MoradoresScreen';
 import { AvisosScreen } from '../screens/morador/AvisosScreen';
@@ -13,6 +13,7 @@ import { ApartamentosScreen } from '../screens/sindico/ApartamentosScreen';
 import { DialerScreen } from '../screens/shared/DialerScreen';
 import { ChatScreen } from '../screens/shared/ChatScreen';
 import { colors } from '../utils/colors';
+import { useAuthStore } from '../store/auth';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -27,6 +28,15 @@ const ICONS: Record<string, string> = {
 };
 
 function SindicoTabs() {
+  const { logout } = useAuthStore();
+
+  function confirmLogout() {
+    Alert.alert('Sair', 'Deseja sair da sua conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: logout },
+    ]);
+  }
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -36,6 +46,11 @@ function SindicoTabs() {
         headerStyle: { backgroundColor: colors.sindico },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
+        headerRight: () => (
+          <TouchableOpacity onPress={confirmLogout} style={{ marginRight: 16 }}>
+            <Text style={{ color: '#fff', fontSize: 13 }}>Sair</Text>
+          </TouchableOpacity>
+        ),
       })}
     >
       <Tab.Screen name="Painel" component={SindicoDashboard} />
