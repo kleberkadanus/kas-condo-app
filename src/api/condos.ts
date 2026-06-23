@@ -58,6 +58,20 @@ export async function listParkingSlots(condoId: number): Promise<ParkingSlot[]> 
   return res.data;
 }
 
+export async function createParkingSlot(condoId: number, data: { number: string; type: string; apt_id?: number }): Promise<ParkingSlot> {
+  const res = await apiClient.post(`/condos/${condoId}/parking`, data);
+  return res.data;
+}
+
+export async function updateParkingSlot(condoId: number, slotId: number, data: { number: string; type: string; apt_id?: number | null }): Promise<ParkingSlot> {
+  const res = await apiClient.put(`/condos/${condoId}/parking/${slotId}`, data);
+  return res.data;
+}
+
+export async function deleteParkingSlot(condoId: number, slotId: number): Promise<void> {
+  await apiClient.delete(`/condos/${condoId}/parking/${slotId}`);
+}
+
 // ─── Cameras ─────────────────────────────────────────────────────
 export async function listCameras(condoId: number): Promise<Camera[]> {
   const res = await apiClient.get(`/condos/${condoId}/cameras`);
