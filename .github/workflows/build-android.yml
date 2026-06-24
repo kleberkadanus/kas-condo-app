@@ -115,6 +115,116 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
 
+      - name: Link react-native-sip2 and patch AndroidManifest
+        run: |
+          python3 - <<'PYEOF'
+          import glob, re, os
+
+          # 1. Verify PJSIP libs were downloaded by libs.sh (postinstall)
+          sip2_root = 'node_modules/react-native-sip2'
+          native_files = (
+              glob.glob(f'{sip2_root}/**/*.so', recursive=True) +
+              glob.glob(f'{sip2_root}/**/*.jar', recursive=True) +
+              glob.glob(f'{sip2_root}/android/libs/**', recursive=True)
+          )
+          print(f'PJSIP native files found: {len(native_files)}')
+          for f in native_files[:10]:
+              print(f'  {f}')
+
+          # 2. Patch android/settings.gradle — add react-native-sip2 project if autolinking missed it
+          settings_path = 'android/settings.gradle'
+          if os.path.exists(settings_path):
+              settings = open(settings_path).read()
+              if ':react-native-sip2' not in settings:
+                  with open(settings_path, 'a') as f:
+                      f.write('\ninclude ":react-native-sip2"\n')
+                      f.write('project(":react-native-sip2").projectDir = '
+                              'new File(rootProject.projectDir, "../node_modules/react-native-sip2/android")\n')
+                  print('settings.gradle: react-native-sip2 added')
+              else:
+                  print('settings.gradle: already included (autolinking worked!)')
+          else:
+              print('settings.gradle: NOT FOUND')
+
+          # 3. Patch android/app/build.gradle — add dependency if autolinking missed it
+          app_gradle = 'android/app/build.gradle'
+          if os.path.exists(app_gradle):
+              content = open(app_gradle).read()
+              if 'react-native-sip2' not in content:
+                  content = re.sub(
+                      r'(dependencies\s*\{)',
+                      r'\1\n    implementation project(":react-native-sip2")',
+                      content, count=1
+                  )
+                  open(app_gradle, 'w').write(content)
+                  print('app/build.gradle: dependency added')
+              else:
+                  print('app/build.gradle: already has dependency (autolinking worked!)')
+          else:
+              print('app/build.gradle: NOT FOUND')
+
+          # 4. Patch MainApplication.kt — add PjSipModulePackage if not already there
+          for path in glob.glob('android/app/src/main/java/**/*.kt', recursive=True):
+              if 'MainApplication' not in path:
+                  continue
+              content = open(path).read()
+              print(f'MainApplication: {path}')
+              if 'PjSipModulePackage' in content:
+                  print('  PjSipModulePackage already present (autolinking worked!)')
+                  continue
+              # Add import — insert after last expo import line
+              if 'import expo.modules.ReactNativeHostWrapper' in content:
+                  content = content.replace(
+                      'import expo.modules.ReactNativeHostWrapper',
+                      'import expo.modules.ReactNativeHostWrapper\nimport one.telefon.sip2.PjSipModulePackage'
+                  )
+              elif 'import expo.modules' in content:
+                  # fallback: add after first expo.modules import
+                  content = re.sub(
+                      r'(import expo\.modules\.[^\n]+\n)',
+                      r'\1import one.telefon.sip2.PjSipModulePackage\n',
+                      content, count=1
+                  )
+              # Add package to getPackages()
+              if 'val packages = PackageList(this).packages' in content:
+                  content = content.replace(
+                      'val packages = PackageList(this).packages',
+                      'val packages = PackageList(this).packages\n            packages.add(PjSipModulePackage())'
+                  )
+                  open(path, 'w').write(content)
+                  print(f'  PjSipModulePackage added')
+              else:
+                  print(f'  WARNING: could not find PackageList pattern, dumping content snippet:')
+                  idx = content.find('getPackages')
+                  if idx >= 0:
+                      print(content[max(0,idx-50):idx+200])
+
+          # 5. Patch AndroidManifest.xml — add PjSipService declaration (REQUIRED)
+          for manifest_path in glob.glob('android/app/src/main/AndroidManifest.xml'):
+              content = open(manifest_path).read()
+              if 'PjSipService' not in content:
+                  sip_entries = (
+                      '\n        <!-- PjSip service -->\n'
+                      '        <service\n'
+                      '            android:name="one.telefon.sip2.PjSipService"\n'
+                      '            android:enabled="true"\n'
+                      '            android:exported="false" />\n'
+                      '        <receiver\n'
+                      '            android:name="one.telefon.sip2.PjSipConnectivityReceiver"\n'
+                      '            android:exported="true">\n'
+                      '            <intent-filter>\n'
+                      '                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />\n'
+                      '            </intent-filter>\n'
+                      '        </receiver>\n'
+                      '        <!-- PjSip end -->'
+                  )
+                  content = content.replace('</application>', sip_entries + '\n    </application>')
+                  open(manifest_path, 'w').write(content)
+                  print(f'{manifest_path}: PjSipService + PjSipConnectivityReceiver added')
+              else:
+                  print(f'{manifest_path}: PjSipService already present')
+          PYEOF
+
       - name: Configure Firebase (google-services.json)
         run: |
           cp google-services.json android/app/google-services.json
