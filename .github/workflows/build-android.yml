@@ -60,7 +60,7 @@ jobs:
       - name: Patch react-native-sip2 for Android 12+
         run: |
           python3 - <<'PYEOF'
-          import glob, os, re
+          import glob, re
 
           files = glob.glob('node_modules/react-native-sip2/**/*.java', recursive=True)
           print(f'Found {len(files)} Java files in react-native-sip2')
@@ -73,47 +73,41 @@ jobs:
               print(f'\n=== {path} ===')
               for i, line in enumerate(content.split('\n'), 1):
                   if 'registerReceiver' in line:
-                      print(f'  line {i}: {line.strip()}')
+                      print(f'  BEFORE line {i}: {line.rstrip()}')
 
-              # Replace: .registerReceiver(a, b) -> API-aware version (no flag yet = 2 args)
-              # Match any 2-arg registerReceiver call not already having 3 args with flag
-              def fix_receiver(m):
-                  full = m.group(0)
-                  if 'RECEIVER_NOT_EXPORTED' in full or 'RECEIVER_EXPORTED' in full:
-                      return full  # already patched
-                  obj = m.group(1)   # context or this
-                  a   = m.group(2)   # receiver arg
-                  b   = m.group(3)   # filter arg
+              # Replace any 2-arg registerReceiver(a, b); with if-else block.
+              # Java ternary cannot be a standalone statement, so we must use if-else.
+              # Pattern captures: optional "obj." prefix + "registerReceiver" as group 1,
+              # first arg as group 2, second arg as group 3, and the semicolon.
+              def fix(m):
+                  if 'RECEIVER_NOT_EXPORTED' in m.group(0) or 'RECEIVER_EXPORTED' in m.group(0):
+                      return m.group(0)
+                  call = m.group(1)  # e.g. "context.registerReceiver" or "registerReceiver"
+                  a, b = m.group(2), m.group(3)
                   return (
-                      f'(android.os.Build.VERSION.SDK_INT >= 26 ? '
-                      f'{obj}.registerReceiver({a}, {b}, android.content.Context.RECEIVER_NOT_EXPORTED) : '
-                      f'{obj}.registerReceiver({a}, {b}))'
+                      f'if (android.os.Build.VERSION.SDK_INT >= 26) {{\n'
+                      f'    {call}({a}, {b}, android.content.Context.RECEIVER_NOT_EXPORTED);\n'
+                      f'}} else {{\n'
+                      f'    {call}({a}, {b});\n'
+                      f'}}'
                   )
 
-              # Pattern: captures obj.registerReceiver(arg1, arg2)
               patched = re.sub(
-                  r'([\w.()]+)\.registerReceiver\((\w+),\s*(\w+)\)',
-                  fix_receiver,
+                  r'((?:[\w.()]+\.)?registerReceiver)\((\w+),\s*(\w+)\);',
+                  fix,
                   content
               )
 
               if patched != content:
                   open(path, 'w').write(patched)
                   print(f'  -> PATCHED')
+                  for i, line in enumerate(patched.split('\n'), 1):
+                      if 'registerReceiver' in line or 'Build.VERSION' in line:
+                          print(f'  AFTER  line {i}: {line.rstrip()}')
               else:
-                  print(f'  -> no simple pattern matched, trying broader fix')
-                  # Fallback: just add the flag as 3rd arg to any 2-arg registerReceiver
-                  patched2 = re.sub(
-                      r'registerReceiver\(([^,)]+),\s*([^,)]+)\)(?!\s*,)',
-                      lambda m: (
-                          f'registerReceiver({m.group(1)}, {m.group(2)}, android.content.Context.RECEIVER_NOT_EXPORTED)'
-                          if 'RECEIVER_NOT_EXPORTED' not in m.group(0) else m.group(0)
-                      ),
-                      content
-                  )
-                  if patched2 != content:
-                      open(path, 'w').write(patched2)
-                      print(f'  -> PATCHED (fallback)')
+                  print(f'  -> no 2-arg pattern matched, dumping lines 14-22:')
+                  for i, line in enumerate(content.split('\n')[13:22], 14):
+                      print(f'    {i}: {line.rstrip()}')
           PYEOF
 
       - name: Expo prebuild
