@@ -1,96 +1,113 @@
-/**
- * Serviço SIP usando react-native-sip2 (PJSIP nativo para Android).
- * Registra o ramal do usuário e gerencia chamadas recebidas da portaria.
- */
 import { useSIPStore } from '../store/sip';
 import { User } from '../types';
 
-// react-native-sip2 é um módulo nativo — importado condicionalmente
-let SipModule: any = null;
+let Pjsip: any = null;
 try {
-  SipModule = require('react-native-sip2').default;
+  Pjsip = require('react-native-sip2').default;
 } catch {
   console.warn('[SIP] react-native-sip2 não disponível — modo sem SIP');
 }
 
 class SIPService {
   private initialized = false;
+  private accountId: number | null = null;
+  private sipDomain = '';
 
   async init(user: User): Promise<void> {
-    if (!SipModule || !user.sip_user || !user.sip_domain || !user.sip_password) {
-      console.log('[SIP] Configuração SIP ausente — sem registro');
+    if (!Pjsip || !user.sip_user || !user.sip_domain || !user.sip_password) {
+      console.log('[SIP] Config ausente, sip_user=' + user?.sip_user + ' domain=' + user?.sip_domain);
       return;
     }
     if (this.initialized) return;
 
+    this.sipDomain = user.sip_domain;
+
     try {
-      await SipModule.start({
-        domain: user.sip_domain,
-        username: user.sip_user,
-        password: user.sip_password,
-        displayName: user.name,
-        transport: 'UDP',
-        port: '7040',
-      });
+      // Inicia o engine PJSIP (não recebe config de conta — apenas inicializa)
+      await Pjsip.start();
 
-      SipModule.addListener('registration', (event: any) => {
-        const registered = event.registrationState === 'OK';
+      // Eventos corretos da API react-native-sip2 v3
+      Pjsip.addListener('registration_changed', (account: any) => {
+        const status: string = account.getRegistrationStatus
+          ? account.getRegistrationStatus()
+          : (account.registrationStatus ?? '');
+        const registered = status === 'Registered';
         useSIPStore.getState().setRegistered(registered);
-        console.log('[SIP] Registro:', event.registrationState);
+        console.log('[SIP] Status registro:', status);
       });
 
-      SipModule.addListener('callReceived', (event: any) => {
+      Pjsip.addListener('call_received', (call: any) => {
+        const callId = call.getId ? call.getId() : call.id;
+        const callerName = call.getRemoteDisplayName ? call.getRemoteDisplayName() : 'Portaria';
+        const callerNumber = call.getRemoteUri ? call.getRemoteUri() : '';
         useSIPStore.getState().setIncomingCall({
-          callId: event.callId,
-          callerName: event.displayName || 'Portaria',
-          callerNumber: event.remoteUri,
+          callId: String(callId),
+          callerName: callerName || 'Portaria',
+          callerNumber,
           state: 'incoming',
         });
       });
 
-      SipModule.addListener('callStateChanged', (event: any) => {
-        if (event.callState === 'PJSIP_INV_STATE_DISCONNECTED') {
+      Pjsip.addListener('call_changed', (call: any) => {
+        const state: string = call.getState ? call.getState() : (call.state ?? '');
+        if (state === 'PJSIP_INV_STATE_DISCONNECTED') {
           useSIPStore.getState().setIncomingCall(null);
           useSIPStore.getState().setActiveCall(null);
         }
       });
 
+      // Registra conta SIP — porta 7040 inclusa no domain para PJSIP rotear corretamente
+      const account = await Pjsip.createAccount({
+        name: user.name || user.sip_user,
+        username: user.sip_user,
+        domain: `${user.sip_domain}:7040`,
+        password: user.sip_password,
+        transport: 'UDP',
+        regServer: null,
+        regTimeout: 300,
+        proxy: null,
+      });
+
+      this.accountId = account.getId ? account.getId() : (account.id ?? null);
       this.initialized = true;
+      console.log('[SIP] Conta criada, ID=' + this.accountId + ' domain=' + user.sip_domain + ':7040');
     } catch (e) {
       console.error('[SIP] Erro ao inicializar:', e);
     }
   }
 
   async answer(callId: string): Promise<void> {
-    if (!SipModule) return;
+    if (!Pjsip) return;
     const incoming = useSIPStore.getState().incomingCall;
     if (!incoming) return;
-    await SipModule.answerCall(callId);
+    await Pjsip.answerCall(Number(callId));
     useSIPStore.getState().setActiveCall({ ...incoming, state: 'active' });
     useSIPStore.getState().setIncomingCall(null);
   }
 
   async reject(callId: string): Promise<void> {
-    if (!SipModule) return;
-    await SipModule.hangupCall(callId);
+    if (!Pjsip) return;
+    await Pjsip.hangupCall(Number(callId));
     useSIPStore.getState().setIncomingCall(null);
   }
 
   async hangup(callId: string): Promise<void> {
-    if (!SipModule) return;
-    await SipModule.hangupCall(callId);
+    if (!Pjsip) return;
+    await Pjsip.hangupCall(Number(callId));
     useSIPStore.getState().setActiveCall(null);
   }
 
   async makeCall(target: string): Promise<void> {
-    if (!SipModule || !this.initialized) {
-      console.warn('[SIP] Não registrado — não é possível ligar');
+    if (!Pjsip || this.accountId === null) {
+      console.warn('[SIP] Não registrado — impossível ligar');
       return;
     }
     try {
-      const callId = await SipModule.makeCall(target);
+      const dest = target.startsWith('sip:') ? target : `sip:${target}@${this.sipDomain}`;
+      const call = await Pjsip.makeCall(this.accountId, dest);
+      const callId = call.getId ? call.getId() : call.id;
       useSIPStore.getState().setActiveCall({
-        callId,
+        callId: String(callId),
         callerName: target,
         callerNumber: target,
         state: 'active',
@@ -101,8 +118,11 @@ class SIPService {
   }
 
   async unregister(): Promise<void> {
-    if (!SipModule || !this.initialized) return;
-    await SipModule.stop();
+    if (!Pjsip) return;
+    if (this.accountId !== null) {
+      try { await Pjsip.deleteAccount(this.accountId); } catch {}
+      this.accountId = null;
+    }
     this.initialized = false;
     useSIPStore.getState().setRegistered(false);
   }
