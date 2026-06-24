@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# keystores (nao commitar — usar GitHub Secrets)
+*.keystore
+keystore_b64.txt
+
 # Expo
 .expo/
 dist/

@@ -118,7 +118,29 @@ jobs:
       - name: Configure Firebase (google-services.json)
         run: |
           cp google-services.json android/app/google-services.json
-          echo "google-services.json copiado para android/app/"
+          echo "google-services.json configurado"
+
+      - name: Configure signing keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/kas-debug.keystore
+          cat >> android/app/build.gradle << 'GRADLE_EOF'
+
+          android.signingConfigs {
+              kasDebug {
+                  storeFile file('kas-debug.keystore')
+                  storePassword "$System.env.KEYSTORE_PASS"
+                  keyAlias "$System.env.KEY_ALIAS"
+                  keyPassword "$System.env.KEY_PASS"
+                  storeType 'PKCS12'
+              }
+          }
+          android.buildTypes.debug.signingConfig = android.signingConfigs.kasDebug
+          GRADLE_EOF
+          echo "Keystore configurada"
+        env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
 
       - name: Test autolinking before any changes
         run: |
@@ -145,6 +167,9 @@ jobs:
           ./gradlew assembleDebug --no-daemon 2>&1
         env:
           JAVA_OPTS: "-Xmx4096m"
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
