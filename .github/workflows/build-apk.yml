@@ -63,6 +63,7 @@ jobs:
           name: KAS Condomínio v${{ steps.version.outputs.version }}
           files: ${{ steps.find_apk.outputs.apk_path }}
           generate_release_notes: false
+          overwrite: true
           body: |
             Versão ${{ steps.version.outputs.version }} do app KAS Condomínio.
 
@@ -75,6 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload APK to VPS
+        if: always() && steps.find_apk.outputs.apk_path != ''
         env:
           VPS_HOST: 104.234.200.93
           VPS_USER: root
