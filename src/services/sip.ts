@@ -87,13 +87,13 @@ class SIPService {
         domain: user.sip_domain,
         password: user.sip_password,
         transport: 'UDP',
-        proxy: `${user.sip_domain}:5060`,
+        proxy: `${user.sip_domain}:7040`,
         regServer: user.sip_domain,
         regTimeout: 300,
       });
 
       this.initialized = true;
-      console.log('[SIP] Conta criada, ID=' + this.account.getId() + ', registrando em ' + user.sip_domain + ':5060');
+      console.log('[SIP] Conta criada, ID=' + this.account.getId() + ', registrando em ' + user.sip_domain + ':7040');
     } catch (e) {
       console.error('[SIP] Erro ao iniciar:', e);
     }

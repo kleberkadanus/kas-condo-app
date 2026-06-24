@@ -48,7 +48,7 @@
       "expo-image-picker"
     ],
     "extra": {
-      "apiUrl": "http://104.234.200.93:8090"
+      "apiUrl": "https://interfone.suporttechcuritiba.com.br"
     }
   }
 }

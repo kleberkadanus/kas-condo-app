@@ -2,8 +2,8 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 export const API_BASE = __DEV__
-  ? 'http://10.0.2.2:8090'        // Android emulator → host localhost
-  : 'http://104.234.200.93:8090'; // VPS produção
+  ? 'http://10.0.2.2:8090'
+  : 'https://interfone.suporttechcuritiba.com.br';
 
 export const apiClient = axios.create({
   baseURL: API_BASE,

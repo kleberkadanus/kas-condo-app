@@ -38,3 +38,11 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# arquivos de sessoes anteriores (nao pertencem ao app)
+admin-*.html
+admin-*.py
+admin_models.py
+apk-artifact.zip
+apk-extracted/
+vps-files/
