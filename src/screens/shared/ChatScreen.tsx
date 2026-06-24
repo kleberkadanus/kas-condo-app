@@ -59,7 +59,11 @@ export function ChatScreen() {
         )}
         <Text style={[styles.bubbleText, isMine && styles.bubbleTextMine]}>{item.content}</Text>
         <Text style={[styles.time, isMine && styles.timeMine]}>
-          {new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          {(() => {
+            const raw = item.created_at;
+            const ts = raw && !raw.endsWith('Z') && !raw.includes('+') ? raw + 'Z' : raw;
+            return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          })()}
         </Text>
       </View>
     );
