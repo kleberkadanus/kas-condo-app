@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "640562035116",
+    "project_id": "kas-condominio",
+    "storage_bucket": "kas-condominio.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:640562035116:android:da0191832f9c267314e209",
+        "android_client_info": {
+          "package_name": "app.kas.condo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLdHxvQOziBnfdCqHikpGnoaItN9nzEAM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

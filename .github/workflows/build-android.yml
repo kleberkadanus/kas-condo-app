@@ -115,6 +115,11 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
 
+      - name: Configure Firebase (google-services.json)
+        run: |
+          cp google-services.json android/app/google-services.json
+          echo "google-services.json copiado para android/app/"
+
       - name: Test autolinking before any changes
         run: |
           node node_modules/expo-modules-autolinking/build/index.js resolve-modules-list --platform android --search-paths . 2>&1 | head -30 || true

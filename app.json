@@ -2,7 +2,7 @@
   "expo": {
     "name": "KAS Condomínio",
     "slug": "kas-condo-app",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +17,7 @@
         "backgroundColor": "#1B4F8A"
       },
       "package": "app.kas.condo",
-      "versionCode": 6,
+      "versionCode": 7,
       "permissions": [
         "RECORD_AUDIO",
         "CAMERA",
