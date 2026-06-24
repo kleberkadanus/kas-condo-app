@@ -93,7 +93,7 @@ jobs:
                   )
 
               patched = re.sub(
-                  r'((?:[\w.()]+\.)?registerReceiver)\((\w+),\s*(\w+)\);',
+                  r'((?:[\w.()]+\.)?registerReceiver)\((\w+),\s*([\w.()]+)\);',
                   fix,
                   content
               )
