@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { useSIPStore } from '../store/sip';
 import { User } from '../types';
 
@@ -22,21 +23,21 @@ class SIPService {
 
   async init(user: User): Promise<void> {
     if (!user.sip_user || !user.sip_domain || !user.sip_password) {
-      console.log('[SIP] Config ausente:', { sip_user: user?.sip_user, domain: user?.sip_domain });
+      Alert.alert('SIP Debug', `Config ausente: user=${user?.sip_user} domain=${user?.sip_domain} pass=${user?.sip_password ? 'sim' : 'nao'}`);
       return;
     }
     if (this.initialized) return;
 
     const ep = getEndpoint();
     if (!ep) {
-      console.warn('[SIP] Endpoint nao disponivel');
+      Alert.alert('SIP Debug', 'Endpoint nao disponivel (lib nao carregada)');
       return;
     }
 
     this.sipDomain = user.sip_domain;
 
     try {
-      await ep.start({});
+      await ep.start({ service: { port: 5060, protocols: ['UDP', 'TCP'] } });
       console.log('[SIP] Endpoint iniciado');
 
       ep.on('registration_changed', (acc: any) => {
@@ -44,6 +45,7 @@ class SIPService {
         const active = reg ? reg.isActive() : false;
         const status = reg ? reg.getStatusText() : '';
         useSIPStore.getState().setRegistered(active);
+        Alert.alert('SIP', active ? `✅ Registrado: ${user.sip_user}@${user.sip_domain}` : `❌ Falha: ${status}`);
         console.log('[SIP] Registro:', active ? 'REGISTRADO' : 'nao registrado', status);
       });
 
@@ -88,13 +90,15 @@ class SIPService {
         password: user.sip_password,
         transport: 'UDP',
         proxy: `${user.sip_domain}:7040`,
-        regServer: user.sip_domain,
+        regServer: `${user.sip_domain}:7040`,
         regTimeout: 300,
       });
 
       this.initialized = true;
-      console.log('[SIP] Conta criada, ID=' + this.account.getId() + ', registrando em ' + user.sip_domain + ':7040');
-    } catch (e) {
+      Alert.alert('SIP Debug', `Conta criada: ${user.sip_user}@${user.sip_domain}:7040 — aguardando registro...`);
+      console.log('[SIP] Conta criada, registrando em ' + user.sip_domain + ':7040');
+    } catch (e: any) {
+      Alert.alert('SIP Erro', String(e?.message || e));
       console.error('[SIP] Erro ao iniciar:', e);
     }
   }
