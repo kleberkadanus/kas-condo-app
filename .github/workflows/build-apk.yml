@@ -1,9 +1,11 @@
 name: Build APK Release
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
+    inputs:
+      manual:
+        description: 'Desativado - usar build-android.yml'
+        required: false
 
 permissions:
   contents: write
