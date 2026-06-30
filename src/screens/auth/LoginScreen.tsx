@@ -10,7 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import * as Linking from 'expo-linking';
+import { Linking } from 'react-native';
 import { useAuthStore } from '../../store/auth';
 import { colors } from '../../utils/colors';
 
@@ -27,9 +27,11 @@ export function LoginScreen() {
     try {
       const url = await Linking.getInitialURL();
       if (!url) return;
-      const { queryParams } = Linking.parse(url);
-      if (queryParams?.email) setEmail(String(queryParams.email));
-      if (queryParams?.password) setPassword(String(queryParams.password));
+      const parsed = new URL(url);
+      const email = parsed.searchParams.get('email');
+      const password = parsed.searchParams.get('password');
+      if (email) setEmail(email);
+      if (password) setPassword(password);
     } catch {
       // ignore deep link errors
     }
