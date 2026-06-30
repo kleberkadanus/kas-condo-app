@@ -310,7 +310,9 @@ jobs:
             android/app/build/outputs/apk/debug/app-debug.apk \
             "$VPS_USER@$VPS_HOST:/opt/kas-condo-api/apk/kas-condo-latest.apk"
           sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
-            "printf '{\"version\":\"'\"$APP_VERSION\"'\",\"download_url\":\"/admin/download/app\"}' > /opt/kas-condo-api/apk/version.json"
+            "printf '{\"version\":\"'\"$APP_VERSION\"'\",\"download_url\":\"/admin/download/app\"}' > /opt/kas-condo-api/apk/version.json && \
+             cp /opt/kas-condo-api/apk/kas-condo-latest.apk /opt/portaria-ai/app/static/downloads/app-debug.apk && \
+             cp /opt/kas-condo-api/apk/kas-condo-latest.apk /opt/portaria-ai/app/static/kas-condo-app.apk"
           echo "APK $APP_VERSION enviado para VPS"
 
       - name: Create Release (on tag)
