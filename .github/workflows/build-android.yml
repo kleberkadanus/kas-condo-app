@@ -164,40 +164,42 @@ jobs:
               print('app/build.gradle: NOT FOUND')
 
           # 4. Patch MainApplication.kt — add PjSipModulePackage if not already there
+          # Expo SDK 56 generates MainApplication.kt using ExpoReactHostFactory + PackageList.apply {}
           for path in glob.glob('android/app/src/main/java/**/*.kt', recursive=True):
               if 'MainApplication' not in path:
                   continue
               content = open(path).read()
               print(f'MainApplication: {path}')
               if 'PjSipModulePackage' in content:
-                  print('  PjSipModulePackage already present (autolinking worked!)')
+                  print('  PjSipModulePackage already present')
                   continue
-              # Add import — insert after last expo import line
-              if 'import expo.modules.ReactNativeHostWrapper' in content:
+              # 4a. Add import — after last expo.modules import line
+              content = re.sub(
+                  r'(import expo\.modules\.[^\n]+\n)(?!import expo\.modules)',
+                  r'\1import one.telefon.sip2.PjSipModulePackage\n',
+                  content
+              )
+              # 4b. Expo SDK 56 new arch pattern: PackageList(this).packages.apply { // comment }
+              if 'PackageList(this).packages.apply' in content:
+                  # Replace the placeholder comment with the actual package add
                   content = content.replace(
-                      'import expo.modules.ReactNativeHostWrapper',
-                      'import expo.modules.ReactNativeHostWrapper\nimport one.telefon.sip2.PjSipModulePackage'
+                      '// add(MyReactNativePackage())',
+                      'add(PjSipModulePackage())'
                   )
-              elif 'import expo.modules' in content:
-                  # fallback: add after first expo.modules import
-                  content = re.sub(
-                      r'(import expo\.modules\.[^\n]+\n)',
-                      r'\1import one.telefon.sip2.PjSipModulePackage\n',
-                      content, count=1
-                  )
-              # Add package to getPackages()
-              if 'val packages = PackageList(this).packages' in content:
+                  open(path, 'w').write(content)
+                  print(f'  PjSipModulePackage added (new arch .apply pattern)')
+              # 4c. Old arch pattern: val packages = PackageList(this).packages
+              elif 'val packages = PackageList(this).packages' in content:
                   content = content.replace(
                       'val packages = PackageList(this).packages',
                       'val packages = PackageList(this).packages\n            packages.add(PjSipModulePackage())'
                   )
                   open(path, 'w').write(content)
-                  print(f'  PjSipModulePackage added')
+                  print(f'  PjSipModulePackage added (old arch pattern)')
               else:
-                  print(f'  WARNING: could not find PackageList pattern, dumping content snippet:')
-                  idx = content.find('getPackages')
-                  if idx >= 0:
-                      print(content[max(0,idx-50):idx+200])
+                  print(f'  WARNING: unknown PackageList pattern — dumping snippet:')
+                  idx = content.find('PackageList')
+                  print(content[max(0,idx-30):idx+300] if idx >= 0 else content[:300])
 
           # 5. Patch AndroidManifest.xml — add PjSipService declaration (REQUIRED)
           for manifest_path in glob.glob('android/app/src/main/AndroidManifest.xml'):

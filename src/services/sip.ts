@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { NativeModules } from 'react-native';
 import { useSIPStore } from '../store/sip';
 import { User } from '../types';
 
@@ -6,11 +6,22 @@ let endpoint: any = null;
 
 function getEndpoint() {
   if (endpoint) return endpoint;
+  // Verify native module is available before instantiating
+  if (!NativeModules.PjSipModule) {
+    console.warn('[SIP] PjSipModule nativo não disponível — verifique o build');
+    return null;
+  }
   try {
     const { Endpoint } = require('react-native-sip2');
     endpoint = new Endpoint();
+    // Confirm start method is callable
+    if (typeof endpoint?.start !== 'function') {
+      console.warn('[SIP] Endpoint.start não é uma função — API incompatível');
+      endpoint = null;
+    }
   } catch (e) {
     console.warn('[SIP] react-native-sip2 nao disponivel:', e);
+    endpoint = null;
   }
   return endpoint;
 }
@@ -23,14 +34,15 @@ class SIPService {
 
   async init(user: User): Promise<void> {
     if (!user.sip_user || !user.sip_domain || !user.sip_password) {
-      Alert.alert('SIP Debug', `Config ausente: user=${user?.sip_user} domain=${user?.sip_domain} pass=${user?.sip_password ? 'sim' : 'nao'}`);
+      console.log('[SIP] Config ausente, ignorando init');
       return;
     }
     if (this.initialized) return;
 
     const ep = getEndpoint();
     if (!ep) {
-      Alert.alert('SIP Debug', 'Endpoint nao disponivel (lib nao carregada)');
+      useSIPStore.getState().setRegistered(false);
+      console.log('[SIP] Endpoint não disponível — módulo nativo não carregado');
       return;
     }
 
@@ -41,11 +53,10 @@ class SIPService {
       console.log('[SIP] Endpoint iniciado');
 
       ep.on('registration_changed', (acc: any) => {
-        const reg = acc.getRegistration();
+        const reg = acc?.getRegistration ? acc.getRegistration() : null;
         const active = reg ? reg.isActive() : false;
         const status = reg ? reg.getStatusText() : '';
         useSIPStore.getState().setRegistered(active);
-        Alert.alert('SIP', active ? `✅ Registrado: ${user.sip_user}@${user.sip_domain}` : `❌ Falha: ${status}`);
         console.log('[SIP] Registro:', active ? 'REGISTRADO' : 'nao registrado', status);
       });
 
@@ -95,7 +106,6 @@ class SIPService {
       });
 
       this.initialized = true;
-      Alert.alert('SIP Debug', `Conta criada: ${user.sip_user}@${user.sip_domain}:7040 — aguardando registro...`);
       console.log('[SIP] Conta criada, registrando em ' + user.sip_domain + ':7040');
     } catch (e: any) {
       Alert.alert('SIP Erro', String(e?.message || e));

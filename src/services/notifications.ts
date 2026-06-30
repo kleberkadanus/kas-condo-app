@@ -48,18 +48,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: '00000000-0000-0000-0000-000000000000',
-    }).catch(() => null);
-    if (!tokenData) {
-      // Fallback: FCM token nativo
-      const fcm = await Notifications.getDevicePushTokenAsync().catch(() => null);
-      if (!fcm) return null;
-      await apiClient.post('/notifications/register', { token: fcm.data, platform: Platform.OS });
-      return fcm.data;
+    // Use FCM native token (direct Firebase, no Expo push service required)
+    const fcm = await Notifications.getDevicePushTokenAsync().catch(() => null);
+    if (!fcm?.data) {
+      console.log('[Push] Não foi possível obter token FCM');
+      return null;
     }
-    const token = tokenData.data;
-    console.log('[Push] Token:', token);
+    const token: string = fcm.data;
+    console.log('[Push] Token FCM:', token.slice(0, 20) + '...');
     await apiClient.post('/notifications/register', { token, platform: Platform.OS });
     return token;
   } catch (e) {
