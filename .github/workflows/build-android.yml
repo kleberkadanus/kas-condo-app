@@ -292,7 +292,10 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=$(node -e \"console.log(require('./app.json').expo.version)\")" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('app.json'))['expo']['version'])")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "App version: $VERSION"
 
       - name: Deploy APK to VPS
         if: always() && hashFiles('android/app/build/outputs/apk/debug/app-debug.apk') != ''
