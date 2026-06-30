@@ -108,7 +108,6 @@ class SIPService {
       this.initialized = true;
       console.log('[SIP] Conta criada, registrando em ' + user.sip_domain + ':7040');
     } catch (e: any) {
-      Alert.alert('SIP Erro', String(e?.message || e));
       console.error('[SIP] Erro ao iniciar:', e);
     }
   }
