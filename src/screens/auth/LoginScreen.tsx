@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,8 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
+import * as Linking from 'expo-linking';
 import { useAuthStore } from '../../store/auth';
 import { colors } from '../../utils/colors';
 
@@ -18,6 +18,22 @@ export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    prefillFromDeepLink();
+  }, []);
+
+  async function prefillFromDeepLink() {
+    try {
+      const url = await Linking.getInitialURL();
+      if (!url) return;
+      const { queryParams } = Linking.parse(url);
+      if (queryParams?.email) setEmail(String(queryParams.email));
+      if (queryParams?.password) setPassword(String(queryParams.password));
+    } catch {
+      // ignore deep link errors
+    }
+  }
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
